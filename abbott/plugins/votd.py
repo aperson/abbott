@@ -107,7 +107,8 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
         votdgroup = self.install_cmdgroup(
             grpname="votd",
             permission="votd.configure",
-            helptext="Voice of the Day configuration commands")
+            helptext="Voice of the Day configuration commands",
+        )
 
         votdgroup.install_command(
             cmdname="enable",
@@ -116,19 +117,22 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
         votdgroup.install_command(
             cmdname="disable",
             callback=self.disable,
-            helptext="Turns off votd for this channel")
+            helptext="Turns off votd for this channel",
+        )
 
         votdgroup.install_command(
             cmdname="draw",
             callback=self.draw,
-            helptext="Draws the raffle right now")
+            helptext="Draws the raffle right now",
+        )
 
         votdgroup.install_command(
             cmdname="settime",
             cmdusage="<hour:minute>",
             argmatch=r"(?P<hour>\d+)(?:[:](?P<minute>\d+))$",
             callback=self.settime,
-            helptext="Sets which hour the drawing will happen, in the current locale")
+            helptext="Sets which hour the drawing will happen, in the current locale",
+        )
 
         self.install_command(
             cmdname="transfer",
@@ -136,7 +140,8 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
             argmatch="(?P<nick>[^ ]+)$",
             callback=self.transfer,
             helptext="if you are the VOTD, transfer it to another",
-            permission=None)
+            permission=None,
+        )
 
         self.install_command(
             cmdname="odds",
@@ -144,7 +149,8 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
             argmatch="(?P<user>[^ ]+)?$",
             callback=self.check_prob,
             helptext="Check your odds for winning voice of the day",
-            permission=None)
+            permission=None,
+        )
 
         # Don't forget!
         self._set_timer()
