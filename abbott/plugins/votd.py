@@ -223,7 +223,8 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
             timeuntil = find_time_until(self.config['hour'])
             self.timer = reactor.callLater(
                 max(int(timeuntil.total_seconds()), 5),
-                self._timer_up)
+                self._timer_up,
+            )
 
     @require_channel
     def enable(self, event, match):
@@ -262,7 +263,8 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
             hour, minute,
             td_to_str(find_time_until(
                 (hour, minute))),
-            "will" if self.config['channel'] else "would"))
+            "will" if self.config['channel'] else "would",
+        ))
 
     def _timer_up(self):
         self.timer = None
@@ -295,7 +297,8 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
             self.transport.send_event(Event(
                 "irc.do_msg",
                 user=channel,
-                message=msg))
+                message=msg,
+            ))
 
         names = set((yield self.transport.issue_request("irc.names", channel)))
 
@@ -347,7 +350,8 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
         # don't count any user that isn't actually here, and users that already
         # have voice or op for some other reason
         names = set(
-            x for x in names if not (x.startswith("@") or x.startswith("+")))
+            x for x in names if not (x.startswith("@") or x.startswith("+"))
+        )
         for contestant in counter.keys():
             if contestant not in names:
                 del counter[contestant]
@@ -357,11 +361,13 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
                 counter[user] *
                 self.config['multipliers'][user] *
                 self.config['scalefactor']))
-            for user in counter.iterkeys())
+            for user in counter.iterkeys()
+        )
 
         try:
             winner = weighted_random_choice(
-                counter.iterkeys(), effective_entries.get)
+                counter.iterkeys(), effective_entries.get,
+            )
         except ValueError:
             say(u"I was going to do the voice of the day, but nobody seems to be eligible =(")
             self.config.save()
@@ -372,7 +378,8 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
         total_entries = sum(effective_entries.itervalues())
         chances = dict(
             (user, eentry / total_entries * 100)
-            for user, eentry in effective_entries.iteritems())
+            for user, eentry in effective_entries.iteritems()
+        )
         winner_chance = chances[winner]
 
         # Adjust all the multipliers up, except for the winner
@@ -416,7 +423,8 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
                 u", presenting the winner and reigning champion of voice with {0} all—time wins…".format(win_count) if win_count == sorted_winners[-1] else
                 u", presenting the winner and runner—up in all—time wins with {0}…".format(win_count) if win_count == sorted_winners[-2] else
                 u" and {0} total wins, today the hat goes to…".format(win_count))(
-                    self.config["win_counter"][winner], sorted(self.config["win_counter"].itervalues()))))
+                    self.config["win_counter"][winner], sorted(self.config["win_counter"].itervalues()))
+            ))
         yield self.wait_for(timeout=2)
         say(u"{0}!".format(winner))
 
@@ -507,7 +515,8 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
             channel=channel,
             set=False,
             modes="v",
-            user=requestor)
+            user=requestor,
+        )
         if not (yield self._send_as_op(e)):
             log.msg("Error while un-voicing previous voice. Bailing")
             return
@@ -516,7 +525,8 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
             channel=channel,
             set=True,
             modes="v",
-            user=target)
+            user=target,
+        )
         self._send_as_op(e)
         self.config["currentvoice"] = target
         self.config.save()
