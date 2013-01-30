@@ -20,6 +20,7 @@ from ..pluginbase import EventWatcher
 from ..transport import Event
 from . import ircop
 
+
 def find_time_until(hour_minute):
     """Returns a datetime.timedelta for the time interval between now and the
     next time of the given hour, in the current locale
@@ -37,14 +38,15 @@ def find_time_until(hour_minute):
     timeuntil = targetdt - datetime.datetime.now()
     return timeuntil
 
+
 def td_to_str(td):
     """Takes a timedelta and returns a string describing the interval as if it
     were taking place at a point in the future from now
 
     """
     return prettydate(
-            datetime.datetime.now() + td
-            )
+        datetime.datetime.now() + td)
+
 
 # http://code.activestate.com/recipes/577363-weighted-random-choice/
 def weighted_random_choice(seq, weight):
@@ -86,6 +88,7 @@ def weighted_random_choice(seq, weight):
 
 class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
     REQUIRES = ["ircop.OpProvider"]
+
     def __init__(self, *args):
         self.started = False
         self.timer = None
@@ -102,53 +105,46 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
         self.listen_for_event("irc.on_nick_change")
 
         votdgroup = self.install_cmdgroup(
-                grpname="votd",
-                permission="votd.configure",
-                helptext="Voice of the Day configuration commands",
-                )
+            grpname="votd",
+            permission="votd.configure",
+            helptext="Voice of the Day configuration commands")
 
         votdgroup.install_command(
-                cmdname="enable",
-                callback=self.enable,
-                helptext="Turns on votd for this channel",
-                )
+            cmdname="enable",
+            callback=self.enable,
+            helptext="Turns on votd for this channel")
         votdgroup.install_command(
-                cmdname="disable",
-                callback=self.disable,
-                helptext="Turns off votd for this channel",
-                )
+            cmdname="disable",
+            callback=self.disable,
+            helptext="Turns off votd for this channel")
 
         votdgroup.install_command(
-                cmdname="draw",
-                callback=self.draw,
-                helptext="Draws the raffle right now",
-                )
+            cmdname="draw",
+            callback=self.draw,
+            helptext="Draws the raffle right now")
 
         votdgroup.install_command(
-                cmdname="settime",
-                cmdusage="<hour:minute>",
-                argmatch=r"(?P<hour>\d+)(?:[:](?P<minute>\d+))$",
-                callback=self.settime,
-                helptext="Sets which hour the drawing will happen, in the current locale",
-                )
+            cmdname="settime",
+            cmdusage="<hour:minute>",
+            argmatch=r"(?P<hour>\d+)(?:[:](?P<minute>\d+))$",
+            callback=self.settime,
+            helptext="Sets which hour the drawing will happen, in the current locale")
 
         self.install_command(
-                cmdname="transfer",
-                cmdusage="<nick>",
-                argmatch="(?P<nick>[^ ]+)$",
-                callback=self.transfer,
-                helptext="if you are the VOTD, transfer it to another",
-                permission=None,
-                )
+            cmdname="transfer",
+            cmdusage="<nick>",
+            argmatch="(?P<nick>[^ ]+)$",
+            callback=self.transfer,
+            helptext="if you are the VOTD, transfer it to another",
+            permission=None)
 
         self.install_command(
-                cmdname="odds",
-                cmdusage="[nick]",
-                argmatch="(?P<user>[^ ]+)?$",
-                callback=self.check_prob,
-                helptext="Check your odds for winning voice of the day",
-                permission=None,
-                )
+            cmdname="odds",
+            cmdusage="[nick]",
+            argmatch="(?P<user>[^ ]+)?$",
+            callback=self.check_prob,
+            helptext="Check your odds for winning voice of the day",
+            permission=None)
 
         # Don't forget!
         self._set_timer()
@@ -175,7 +171,7 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
         self.config['channel'] = self.config.get('channel', None)
 
         # The hour of the day to do the drawing
-        self.config['hour'] = tuple(self.config.get('hour', (0,0)))
+        self.config['hour'] = tuple(self.config.get('hour', (0, 0)))
 
         # Who currently has voice due to this plugin, right now. Will be
         # devoiced at the next drawing
@@ -193,6 +189,7 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
             self._set_timer()
 
         old_save = self.config.save
+
         def add_probs_and_save():
             # Add the probability to the saved config for convenience of
             # external apps that may want to read this data but not have
@@ -219,9 +216,8 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
         if channel:
             timeuntil = find_time_until(self.config['hour'])
             self.timer = reactor.callLater(
-                    max(int(timeuntil.total_seconds()), 5),
-                    self._timer_up,
-                    )
+                max(int(timeuntil.total_seconds()), 5),
+                self._timer_up)
 
     @require_channel
     def enable(self, event, match):
@@ -258,9 +254,9 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
 
         event.reply(u"VOTD drawing {3} happen at {0}:{1}, which is {2}".format(
             hour, minute,
-            td_to_str(find_time_until((hour,minute))),
-            "will" if self.config['channel'] else "would",
-            ))
+            td_to_str(find_time_until(
+                (hour, minute))),
+            "will" if self.config['channel'] else "would"))
 
     def _timer_up(self):
         self.timer = None
@@ -269,14 +265,16 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
             # Maybe the plugin was unloaded?
             return
 
-        IDLE_TIME = self.config.get("idle_time", 60*5)
+        IDLE_TIME = self.config.get("idle_time", 60 * 5)
 
         now = time.time()
         if now - self.lastspoken >= IDLE_TIME:
             self._do_votd()
         else:
             towait = IDLE_TIME - (now - self.lastspoken)
-            log.msg("Was going to do VOTD but the channel is active. Waiting %s seconds and trying again"%towait)
+            log.msg(
+                "Was going to do VOTD but the channel is active."
+                "Waiting %s seconds and trying again" % towait)
             self.timer = reactor.callLater(towait, self._timer_up)
 
     @defer.inlineCallbacks
@@ -286,11 +284,12 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
         if not channel:
             raise RuntimeError("_do_votd() was called, but no channel defined")
         log.msg("Doing VOTD for %s" % channel)
+
         def say(msg):
-            self.transport.send_event(Event("irc.do_msg",
+            self.transport.send_event(Event(
+                "irc.do_msg",
                 user=channel,
-                message=msg,
-                ))
+                message=msg))
 
         names = set((yield self.transport.issue_request("irc.names", channel)))
 
@@ -300,19 +299,19 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
             yield self.transport.issue_request("ircop.become_op", 20)
         except ircop.OpFailed, e:
             say(u"I was going to do Voice of the Day, but there was an error. someone halp plz!")
-            log.msg("Error while un-voicing previous voice. Bailing. "  + str(e))
+            log.msg("Error while un-voicing previous voice. Bailing. " + str(e))
             return
 
         # de-voice the current voice if he/she still has it
         currentvoice = self.config.get("currentvoice")
         if currentvoice:
-            if "+"+currentvoice in names:
+            if "+" + currentvoice in names:
                 yield self.transport.issue_request("ircop.devoice", channel, currentvoice)
                 # edit the names set to reflect the current channel state. This
                 # is only really important later so the current voice is still
                 # technically eligible for the new drawing (although that
                 # should be unlikely)
-                names.remove("+"+currentvoice)
+                names.remove("+" + currentvoice)
                 names.add(currentvoice)
 
             self.config['currentvoice'] = None
@@ -342,25 +341,21 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
         # don't count any user that isn't actually here, and users that already
         # have voice or op for some other reason
         names = set(
-                x for x in names if not (x.startswith("@") or x.startswith("+"))
-                )
+            x for x in names if not (x.startswith("@") or x.startswith("+")))
         for contestant in counter.keys():
             if contestant not in names:
                 del counter[contestant]
 
         effective_entries = dict(
-                    (user, int(
-                                counter[user] *
-                                self.config['multipliers'][user] *
-                                self.config['scalefactor']
-                              )
-                    ) for user in counter.iterkeys()
-                )
+            (user, int(
+                counter[user] *
+                self.config['multipliers'][user] *
+                self.config['scalefactor']))
+            for user in counter.iterkeys())
 
         try:
-            winner = weighted_random_choice(counter.iterkeys(),
-                    effective_entries.get
-                    )
+            winner = weighted_random_choice(
+                counter.iterkeys(), effective_entries.get)
         except ValueError:
             say(u"I was going to do the voice of the day, but nobody seems to be eligible =(")
             self.config.save()
@@ -370,19 +365,17 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
         # purposes and in the response messages
         total_entries = sum(effective_entries.itervalues())
         chances = dict(
-                (user, eentry/total_entries*100)
-                for user, eentry in effective_entries.iteritems()
-                )
+            (user, eentry / total_entries * 100)
+            for user, eentry in effective_entries.iteritems())
         winner_chance = chances[winner]
-
 
         # Adjust all the multipliers up, except for the winner
         for user, m in self.config['multipliers'].items():
             # (except the winner)
             if user != winner:
-                self.config['multipliers'][user] = min(1.0, m*1.5)
+                self.config['multipliers'][user] = min(1.0, m * 1.5)
             else:
-                self.config['multipliers'][user] = m*0.001
+                self.config['multipliers'][user] = m * 0.001
 
         self.config.save()
 
@@ -393,33 +386,31 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
         self.config["win_counter"][winner] += 1
 
         say(u"{phrase} {0:.2f}%{otherphrase}".format(
-                winner_chance,
-                phrase=
-                       (lambda sorted_chance:
-                           # Had the most odds with a >xx% lead over the runner up
-                           u"In a landslide win with" if sorted_chance[-1] == winner_chance and winner_chance - sorted_chance[-2] > 5 else
-                           # Had the most odds with a <xx% lead
-                           u"Narrowly beating the competition with" if sorted_chance[-1] == winner_chance else
-                           # Had the second most odds
-                           u"the underdog in today’s race with" if sorted_chance[-2] == winner_chance else
-                           # Special phrases for low odds
-                           u"with the impossible odds of" if winner_chance<1 else
-                           u"beating the odds with" if winner_chance < 5 else
-                           # catch all
-                           u"coming in with"
-                           )(sorted(chances.itervalues())),
+            winner_chance,
+            phrase=(
+                lambda sorted_chance:
+                # Had the most odds with a >xx% lead over the runner up
+                u"In a landslide win with" if sorted_chance[-1] == winner_chance and winner_chance - sorted_chance[-2] > 5 else
+                # Had the most odds with a <xx% lead
+                u"Narrowly beating the competition with" if sorted_chance[-1] == winner_chance else
+                # Had the second most odds
+                u"the underdog in today’s race with" if sorted_chance[-2] == winner_chance else
+                # Special phrases for low odds
+                u"with the impossible odds of" if winner_chance < 1 else
+                u"beating the odds with" if winner_chance < 5 else
+                # catch all
+                u"coming in with")(sorted(chances.itervalues())),
 
-                otherphrase=
-                        (lambda win_count, sorted_winners:
-                                u", today’s first—time winner is…" if win_count == 1 else
-                                u" and winning for the second time, today’s hat goes to…" if win_count == 2 else
-                                u", today’s winner and three—time champion of voice is…" if win_count == 3 else
-                                u" and tied for number of all—time wins with {0}, today’s hat goes to…".format(win_count) if win_count == sorted_winners[-1] == sorted_winners[-2] else
-                                u", presenting the winner and reigning champion of voice with {0} all—time wins…".format(win_count) if win_count == sorted_winners[-1] else
-                                u", presenting the winner and runner—up in all—time wins with {0}…".format(win_count) if win_count == sorted_winners[-2] else
-                                u" and {0} total wins, today the hat goes to…".format(win_count)
-                        )(self.config["win_counter"][winner], sorted(self.config["win_counter"].itervalues())),
-                ))
+            otherphrase=(
+                lambda win_count, sorted_winners:
+                u", today’s first—time winner is…" if win_count == 1 else
+                u" and winning for the second time, today’s hat goes to…" if win_count == 2 else
+                u", today’s winner and three—time champion of voice is…" if win_count == 3 else
+                u" and tied for number of all—time wins with {0}, today’s hat goes to…".format(win_count) if win_count == sorted_winners[-1] == sorted_winners[-2] else
+                u", presenting the winner and reigning champion of voice with {0} all—time wins…".format(win_count) if win_count == sorted_winners[-1] else
+                u", presenting the winner and runner—up in all—time wins with {0}…".format(win_count) if win_count == sorted_winners[-2] else
+                u" and {0} total wins, today the hat goes to…".format(win_count))(
+                    self.config["win_counter"][winner], sorted(self.config["win_counter"].itervalues()))))
         yield self.wait_for(timeout=2)
         say(u"{0}!".format(winner))
 
@@ -434,8 +425,6 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
             yield self.wait_for(timeout=2)
 
         self._set_timer()
-
-
 
     def draw(self, event, match):
         channel = event.channel
@@ -489,15 +478,15 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
             return
 
         names = (yield self.transport.issue_request("irc.names", channel))
-        if "+"+requestor not in names:
+        if "+" + requestor not in names:
             event.reply(u"Hey, where'd your hat go?")
             return
 
-        if "+"+target in names:
+        if "+" + target in names:
             event.reply(u"{0} already has voice".format(target))
             return
 
-        if "@"+target in names:
+        if "@" + target in names:
             event.reply(u"no can do")
             return
 
@@ -507,21 +496,21 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
 
         event.reply(u"okay...")
 
-        e = Event("irc.do_mode",
-                channel=channel,
-                set=False,
-                modes="v",
-                user=requestor,
-                )
+        e = Event(
+            "irc.do_mode",
+            channel=channel,
+            set=False,
+            modes="v",
+            user=requestor)
         if not (yield self._send_as_op(e)):
             log.msg("Error while un-voicing previous voice. Bailing")
             return
-        e = Event("irc.do_mode",
-                channel=channel,
-                set=True,
-                modes="v",
-                user=target,
-                )
+        e = Event(
+            "irc.do_mode",
+            channel=channel,
+            set=True,
+            modes="v",
+            user=target)
         self._send_as_op(e)
         self.config["currentvoice"] = target
         self.config.save()
@@ -557,5 +546,6 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
 
         my_ecount = self.config['counter'][user] * self.config['multipliers'][user] * self.config['scalefactor']
         my_chances = int(my_ecount) / total * 100
-        event.reply(u"{1} {0:.2f}% with {2} entries and a multiplier of {3:.3f}".format(my_chances, msg, self.config['counter'][user], self.config['multipliers'][user]),
-                **reply_opts)
+        event.reply(u"{1} {0:.2f}% with {2} entries and a multiplier of {3:.3f}".format(
+            my_chances, msg, self.config['counter'][user], self.config['multipliers'][user]),
+            **reply_opts)
