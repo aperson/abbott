@@ -273,7 +273,7 @@ class VoiceOfTheDay(EventWatcher, CommandPluginSuperclass):
         else:
             towait = IDLE_TIME - (now - self.lastspoken)
             log.msg(
-                "Was going to do VOTD but the channel is active."
+                "Was going to do VOTD but the channel is active. "
                 "Waiting %s seconds and trying again" % towait)
             self.timer = reactor.callLater(towait, self._timer_up)
 
